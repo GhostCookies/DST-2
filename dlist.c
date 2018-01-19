@@ -1,4 +1,4 @@
-// dlist.c fånig
+// dlist.c fånig 
 
 #include "dlist.h"
 
