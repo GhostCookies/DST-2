@@ -54,22 +54,28 @@ void insert(list * mylist, listobj * pObj)
 }
 
 void insertWait(list * mylist, listobj * pObj)
-{
-	// insert first in list
+{// insert first in list
 	listobj *pMarker;
 	pMarker = mylist->pHead;
-	
-	if((pObj->pTask != NULL)&&(pMarker->pTask != NULL)){
-		printf("true \n");
-		while(pObj->pTask->DeadLine >= pMarker->pTask->DeadLine){
+	if((pObj->pTask == NULL)||(pMarker->pTask == NULL)){
+		return;
+	}
+	if(pObj->pTask->DeadLine == NULL){
+		pObj->pPrevious = mylist->pTail;
+		pObj->pNext = pObj;
+		mylist->pTail->pNext = pObj;
+		mylist->pTail = pObj;
+		return;
+	}
+
+	while(pObj->pTask->DeadLine > pMarker->pTask->DeadLine){
 		pMarker = pMarker->pNext;
-		}
 	}
 	/* Position found, insert element */
-	pObj->pNext = pMarker->pNext;
-	pObj->pPrevious = pMarker;
-	pMarker->pNext = pObj;
-	pObj->pNext->pPrevious = pObj;
+	pObj->pNext = pMarker;
+	pObj->pPrevious = pMarker->pPrevious;
+	pMarker->pPrevious = pObj;
+	pObj->pPrevious->pNext = pObj;
 }
 
 void timerSort(list* mylist,listobj* prObj){
