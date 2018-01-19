@@ -72,6 +72,32 @@ void insertWait(list * mylist, listobj * pObj)
 	pObj->pNext->pPrevious = pObj;
 }
 
+void timerSort(list* mylist,listobj* prObj){
+    listobj* pMarker = mylist->pHead;
+    printf(" Head  %u ", mylist->pHead->nTCnt);;
+    if(mylist->pHead==mylist->pTail){
+        mylist->pHead->nTCnt=prObj->nTCnt;
+        return;
+    }
+    else if((pMarker->nTCnt) >= (prObj->nTCnt)){
+            prObj->pNext = pMarker->pNext;
+            prObj->pPrevious = pMarker;
+            pMarker->pNext = prObj;
+            prObj->pNext->pPrevious = prObj;
+    }
+    else{
+        while(pMarker->pNext != mylist->pTail && pMarker->pNext->nTCnt < prObj->nTCnt){
+            pMarker=pMarker->pNext;
+        }
+        prObj->pNext=pMarker->pNext;
+        if(pMarker->pNext!=mylist->pTail){
+            prObj->pNext->pPrevious=prObj;
+        }
+        pMarker->pNext=prObj;
+        prObj->pPrevious=pMarker;   
+    }
+}
+
 listobj * extract(listobj *pObj)
 {
 	pObj->pPrevious->pNext = pObj->pNext;
