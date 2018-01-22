@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "dlist.h"
 #include "tcb.h"
+#include "kernel_hwdep.h"
 uint TICK;
 bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
 list waitingList;
@@ -21,7 +22,7 @@ int init_kernel(void){
      */
 }
 exception create_task(void (* body)(), uint d){
-    TCB* objt = createTcbObj(d);  //Allocate memory for TCB & Set deadline in TCB
+    TCB* objt = create_TCB(d);  //Allocate memory for TCB & Set deadline in TCB
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
     if(S_MODE){
@@ -42,7 +43,11 @@ void terminate(void){
     isr_on();
 }
 void run(void){
-
+    //TODO 
+    //Initialize interrupt timer
+    S_MODE=FALSE;   //Set the kernel in running mode
+    isr_on();  //Enable interrupts
+    LoadContext();  //Load context
 }
 // COMMUNICATION
 
@@ -124,11 +129,11 @@ void set_deadline(uint nNew){
 
 //INTERRUPT
 extern void isr_off(void){
-    
+    set_isr(ISR_OFF);   //Turns off interrupts
 }
 
 extern void isr_on(void){
-    
+    set_isr(ISR_OFF);    //Turns on intterrupts
 }
 extern void SaveContext(void){
     
