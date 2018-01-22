@@ -22,23 +22,39 @@ int init_kernel(void){
      */
 }
 exception create_task(void (* body)(), uint d){
+    volatile bool firstTime = TRUE;
     TCB* objt = create_TCB(d);  //Allocate memory for TCB & Set deadline in TCB
     if(objt == NULL){
-        return 0;
+        return FAIL;
     }
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
     if(S_MODE){
-        insert//readylist and update order in list
-        return 1; //Return status
+        listobj * objl = create_listobj(num);
+        if(objl == NULL){
+            return FAIL;
+        }
+        objl->pTask = objt;
+        insertDeadline(readylist, objl);//readylist and update order in list
+        return OK; //Return status
     }
     else{
         //TODO
         isr_off();
         SaveContext();
+        if(firstTime == TRUE){
+            firstTime = FALSE;
+            listobj * objl = create_listobj(num);
+            if(objl == NULL){
+                return FAIL;
+            }
+            objl->pTask = objt;
+            insertDeadline(readylist, objl);//readylist and update order in list
+            LoadContext();
+        }   
         
     }
-    
+   return OK; 
 }
 void terminate(void){
     
