@@ -73,14 +73,18 @@ void run(void){
 mailbox* create_mailbox(uint nMessages, uint nDataSize){    //DONE????
     mailbox* mailList = (mailbox *)calloc(1, sizeof(mailbox)); //Allocate memory for the Mailbox
     if (mailList == NULL) {
-		return NULL;
+		return 0;
 	}
-    mailList->pHead = (msg)*calloc(1,sizeof(msg));  //Allocate memory for the Mailbox
+    msg* msgobj = (msg *)calloc(1,sizeof(msg));  //Allocate memory for msg
+    if(msgobj == NULL){
+        return 0;
+    }
+    mailList->pHead = msgobj;  
     if (mailList->pHead == NULL) {
 		free(mailList);
 		return NULL;
     }
-    mailList->pTail = (msg)*calloc(1,sizeof(msg));  //Allocate memory for the Mailbox
+    mailList->pTail = msgobj;  
     if(mailList->pTail==NULL){
         free(mailList->pHead);
         free(mailList);
@@ -140,7 +144,7 @@ uint ticks(void){
     return TICK;
 }
 uint deadline(void){
-    return readyList->pHead->pTask->DeadLine; //Return the deadline of the current task
+
 }
 void set_deadline(uint nNew){
     
