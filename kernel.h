@@ -113,6 +113,7 @@ void            run( void );
 
 // Communication
 mailbox*	create_mailbox( uint nMessages, uint nDataSize );
+exception       remove_mailbox(mailbox* mBox);  //Should this be addded
 int             no_messages( mailbox* mBox );
 
 exception       send_wait( mailbox* mBox, void* pData );
