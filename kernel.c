@@ -3,6 +3,7 @@
 #include "kernel.h"
 #include "dlist.h"
 #include "tcb.h"
+#include "kernel_hwdep.h"
 uint TICK;
 bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
 list waitingList;
@@ -45,7 +46,11 @@ void terminate(void){
     isr_on();
 }
 void run(void){
-
+    //TODO 
+    //Initialize interrupt timer
+    S_MODE=FALSE;   //Set the kernel in running mode
+    isr_on();  //Enable interrupts
+    LoadContext();  //Load context
 }
 // COMMUNICATION
 
@@ -127,11 +132,11 @@ void set_deadline(uint nNew){
 
 //INTERRUPT
 extern void isr_off(void){
-    
+    set_isr(ISR_OFF);   //Turns off interrupts
 }
 
 extern void isr_on(void){
-    
+    set_isr(ISR_OFF);    //Turns on intterrupts
 }
 extern void SaveContext(void){
     
