@@ -21,12 +21,15 @@ int init_kernel(void){
      */
 }
 exception create_task(void (* body)(), uint d){
-    TCB* objt = createTcbObj(d);  //Allocate memory for TCB & Set deadline in TCB
+    TCB* objt = create_TCB(d);  //Allocate memory for TCB & Set deadline in TCB
+    if(objt == NULL){
+        return 0;
+    }
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
     if(S_MODE){
-        //readylist and update order in list
-        return 0; //Return status
+        insert//readylist and update order in list
+        return 1; //Return status
     }
     else{
         //TODO

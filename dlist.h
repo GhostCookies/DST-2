@@ -5,7 +5,8 @@
 list * create_list();
 listobj * create_listobj(int num);
 void insert(list * mylist, listobj * pObj);
-void insertWait(list * mylist, listobj * pObj);
+void insertDeadline(list * mylist, listobj * pObj);
+void insertTimer(list * mylist, listobj * pObj);
 listobj * extract(listobj * pObj);
 
 #endif

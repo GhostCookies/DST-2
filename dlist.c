@@ -53,7 +53,7 @@ void insert(list * mylist, listobj * pObj)
 	pObj->pNext->pPrevious = pObj;
 }
 
-void insertWait(list * mylist, listobj * pObj)
+void insertDeadline(list * mylist, listobj * pObj)
 {// insert first in list
 	listobj *pMarker;
 	pMarker = mylist->pHead;
@@ -78,7 +78,7 @@ void insertWait(list * mylist, listobj * pObj)
 	pObj->pPrevious->pNext = pObj;
 }
 
-void timerSort(list* mylist,listobj* prObj){
+void insertTimer(list* mylist,listobj* prObj){
     listobj* pMarker = mylist->pHead;
     printf(" Head  %u ", mylist->pHead->nTCnt);;
     if(mylist->pHead==mylist->pTail){
@@ -125,11 +125,11 @@ int main(void){
 	testObj2->pTask = mytask;
 	testObj3->pTask = mytask;
 	//testObj1->pTask.DeadLine = 100;
-	insertWait(testList1,testObj1);
+	insertDeadline(testList1,testObj1);
 	printf("%d \n", 1);
-	insertWait(testList1,testObj2);
+	insertDeadline(testList1,testObj2);
 	printf("%d \n", 2);
-	insertWait(testList1,testObj3);
+	insertDeadline(testList1,testObj3);
 	printf("%d \n", 3);
 	//insertWait(testList2,testObj2);
 	uint x = testList1->pTail->pTask->DeadLine;
