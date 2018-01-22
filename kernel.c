@@ -4,7 +4,7 @@
 #include "dlist.h"
 #include "tcb.h"
 uint TICK;
-bool MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
+bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
 list waitingList;
 list readyList;
 list timerList;
@@ -24,7 +24,7 @@ exception create_task(void (* body)(), uint d){
     TCB* objt = createTcbObj(d);  //Allocate memory for TCB & Set deadline in TCB
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
-    if(MODE){
+    if(S_MODE){
         //readylist and update order in list
         return 0; //Return status
     }
@@ -38,6 +38,8 @@ exception create_task(void (* body)(), uint d){
 }
 void terminate(void){
     
+    S_MODE=TRUE;
+    isr_on();
 }
 void run(void){
 
