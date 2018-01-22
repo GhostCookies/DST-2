@@ -1,7 +1,8 @@
 #include <time.h>
 #include <stdio.h>
 #include "kernel.h"
-#include "dlist.c"
+#include "dlist.h"
+#include "tcb.h"
 uint TICK;
 bool MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
 list waitingList;
