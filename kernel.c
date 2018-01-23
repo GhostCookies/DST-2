@@ -187,10 +187,47 @@ exception receive_wait(mailbox* mBox, void* pData){
     }
 }
 exception send_no_wait(mailbox* mBox, void* pData){
-    
+    volatile bool firstTime = TRUE;
+    isr_off();
+    SaveContext();
+    if(firstTime){
+        firstTime = FALSE;
+        if(){//IF receiving task is waiting THEN
+            //Copy data to receiving tasks data area
+            //Remove receiving tasks Message struct from the Mailbox
+            //Move receiving task to readyList
+            LoadContext();
+        }
+        else{
+            //Allocate a Message structure
+            //Copy Data to the Message
+            if(){//Mailbox is full
+                //Remove the oldest Message struct
+            }
+            //Add Message to the Mailbox
+        }
+    }
+    return OK;
 }
 int receive_no_wait(mailbox* mBox, void* pData){
-    
+    volatile bool firstTime = TRUE;
+    isr_off();
+    SaveContext();
+    if(firstTime){
+        firstTime = FALSE;
+        if(){//IF send Message is waiting THEN
+            //Copy senders data to receiving tasks data area
+            //Remove sending tasks Message struct from Mailbox
+            if(){//IF Message was of wait type THEN
+                //Move sending task to readyList
+            }
+            else{
+                //Free senders data area
+            }
+        }
+        LoadContext();
+    }
+    return 0;//Return status on received Message (not 0!)
 }
 
 //TIMING

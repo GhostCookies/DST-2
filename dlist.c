@@ -73,7 +73,7 @@ void insertDeadline(list * mylist, listobj * pObj)
 	//}
 	//Insert catch when deadline is NULL?
 	while(pMarker != mylist->pTail){
-		 if(pObj->pTask->DeadLine > pMarker->pTask->DeadLine){
+		 if(pObj->pTask->DeadLine >= pMarker->pTask->DeadLine){
 			pMarker = pMarker->pNext;
 		 }
 		 else{
