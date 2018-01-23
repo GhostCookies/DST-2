@@ -3,12 +3,14 @@
 #include "kernel.h"
 #include "dlist.h"
 #include "tcb.h"
+#include "msg.h"
 #include "kernel_hwdep.h"
 uint TICK;
 bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
 list waitingList;
 list readyList;
 list timerList;
+TCB running;
 // TASK ADMINISTRATION
 int init_kernel(void){
     set_ticks(0);
@@ -88,7 +90,7 @@ mailbox* create_mailbox(uint nMessages, uint nDataSize){    //DONE????
     if (mailList == NULL) {
 		return 0;
 	}
-    msg* msgobj = (msg *)calloc(1,sizeof(msg));  //Allocate memory for msg
+    msg* msgobj = create_MSG();  //Allocate memory for msg
     if(msgobj == NULL){
         return 0;
     }
@@ -106,12 +108,19 @@ mailbox* create_mailbox(uint nMessages, uint nDataSize){    //DONE????
     mailList->pHead->pNext = mailList->pTail;   //Initialize Mailbox structure
     mailList->pTail->pPrevious = mailList->pHead;   //Initialize Mailbox structure
     mailList->pTail->pNext = mailList->pTail;   //Initialize Mailbox structure
-    mailList->nDataSize=nDataSize;  //Initialize Mailbox structure
-    mailList->nMessages=nMessages;  //Initialize Mailbox structure
+    mailList->nDataSize=nDataSize;  //Set The size of one Message in the Mailbox 
+    mailList->nMessages=nMessages;  //Set the maximum number of Messages the Mailbox can hold.
     return mailList;
 }
 exception remove_mailbox(mailbox* mBox){
-    
+    if(mBox->pHead->pNext==mBox->pTail){    //Checks if mBox is empty
+        free(mBox->pTail);  //if empty free memory for the mailbox
+        free(mBox->pHead);
+        free(mBox);
+        return OK;
+    }
+    else
+        return NOT_EMPTY;
 }
 int no_messages(mailbox* mBox){
     
