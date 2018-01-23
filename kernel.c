@@ -168,7 +168,7 @@ exception wait(uint nTicks){
     SaveContext();  //Save context
     if(firstTime){ // IF first execution THEN
         firstTime = FALSE;  //Set: not first execution any more
-        listobj * objl = extract(readylist->pHead->pNext);
+        listobj * objl = extract(readyList->pHead->pNext);
         objl->nTCnt = nTicks;
         insertTimer(waitingList, objl);//Place running task in the Timerlist
         LoadContext(); //Load context
