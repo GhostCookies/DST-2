@@ -28,7 +28,7 @@ int init_kernel(void){
         return FAIL;
         }
         //create idle task
-        create_task(idleTask,uint_MAX)
+        create_task(idleTask,UINT_MAX);
         S_MODE = TRUE;
         return OK;
 
