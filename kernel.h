@@ -103,7 +103,7 @@ typedef struct {
 
 
 // Function prototypes
-
+void idleTask(void); // Thomas added this
 
 // Task administration
 int             init_kernel(void);

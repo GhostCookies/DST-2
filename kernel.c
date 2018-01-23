@@ -11,6 +11,7 @@ list * waitingList;
 list * readyList;
 list * timerList;
 TCB * running;
+
 // TASK ADMINISTRATION
 int init_kernel(void){
     set_ticks(0);
@@ -26,7 +27,10 @@ int init_kernel(void){
         if(timerList==NULL){
         return FAIL;
         }
-        //create_task(,NULL)
+        //create idle task
+        create_task(idleTask,UINT_MAX);
+        S_MODE = TRUE;
+        return OK;
 
     /*
     Set tick counter to zero - DONE
@@ -45,7 +49,7 @@ exception create_task(void (* body)(), uint d){
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
     if(S_MODE){
-        listobj * objl = create_listobj(num); // num = nTCnt, unsure of its value
+        listobj * objl = create_listobj(10); // num = nTCnt, unsure of its value
         if(objl == NULL){
             return FAIL;
         }
@@ -57,9 +61,9 @@ exception create_task(void (* body)(), uint d){
         //TODO
         isr_off();
         SaveContext();
-        if(firstTime == TRUE){
+        if(firstTime){
             firstTime = FALSE;
-            listobj * objl = create_listobj(num);
+            listobj * objl = create_listobj(10);
             if(objl == NULL){
                 return FAIL;
             }
@@ -158,24 +162,23 @@ int receive_no_wait(mailbox* mBox, void* pData){
 
 //TIMING
 exception wait(uint nTicks){
+    volatile bool firstTime = TRUE;
     isr_off();  //Disable interrupt
     SaveContext();  //Save context
     //TODO
-    /*
-     * IF first execution THEN
-            Set: ìnot first execution any moreî
-            Place running task in the Timerlist
-            Load context
-        ELSE
-     *       IF deadline is reached THEN
-                    Status is DEADLINE_REACHED
-                ELSE
-            Status is OK
-        ENDIF
-    ENDIF
-    Return status
-     */
+    if(firstTime){ // IF first execution THEN
+        firstTime = FALSE;  //Set: not first execution any more
+        listobj * objl = extract(readylist->pHead->pNext);
+        objl->nTCnt = nTicks;
+        insertTimer(waitingList, objl);//Place running task in the Timerlist
+        LoadContext(); //Load context
+    }
+    if(TICK >= running->DeadLine){
+        return DEADLINE_REACHED;
+    }
+    return OK; 
 }
+
 void set_ticks(uint no_of_ticks){
     TICK = no_of_ticks;
 }
