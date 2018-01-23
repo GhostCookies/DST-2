@@ -12,7 +12,20 @@ list timerList;
 // TASK ADMINISTRATION
 int init_kernel(void){
     set_ticks(0);
-    
+    waitingList = create_list();
+    if(waitingList==NULL){
+        return FAIL;
+        }
+    readylist = create_list();
+        if(readyList==NULL){
+        return FAIL;
+        }
+    timerList = create_list();
+        if(timerList==NULL){
+        return FAIL;
+        }
+        create_task(&idleTask,NULL)
+
     /*
     Set tick counter to zero - DONE
     Create necessary data structures - ????
@@ -30,7 +43,7 @@ exception create_task(void (* body)(), uint d){
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
     if(S_MODE){
-        listobj * objl = create_listobj(num);
+        listobj * objl = create_listobj(num); // num = nTCnt, unsure of its value
         if(objl == NULL){
             return FAIL;
         }
@@ -144,10 +157,13 @@ uint ticks(void){
     return TICK;
 }
 uint deadline(void){
-
+    return running->DeadLine;
 }
 void set_deadline(uint nNew){
-    
+    running->DeadLine = nNew;
+}
+void idleTask(){
+    while(TRUE){}
 }
 
 //INTERRUPT
