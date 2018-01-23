@@ -7,10 +7,10 @@
 #include "kernel_hwdep.h"
 uint TICK;
 bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
-list waitingList;
-list readyList;
-list timerList;
-TCB running;
+list * waitingList;
+list * readyList;
+list * timerList;
+TCB * running;
 // TASK ADMINISTRATION
 int init_kernel(void){
     set_ticks(0);
@@ -18,7 +18,7 @@ int init_kernel(void){
     if(waitingList==NULL){
         return FAIL;
         }
-    readylist = create_list();
+    readyList = create_list();
         if(readyList==NULL){
         return FAIL;
         }
@@ -26,7 +26,7 @@ int init_kernel(void){
         if(timerList==NULL){
         return FAIL;
         }
-        create_task(&idleTask,NULL)
+        //create_task(,NULL)
 
     /*
     Set tick counter to zero - DONE
@@ -50,7 +50,7 @@ exception create_task(void (* body)(), uint d){
             return FAIL;
         }
         objl->pTask = objt;
-        insertDeadline(readylist, objl);//readylist and update order in list
+        insertDeadline(readyList, objl);//readylist and update order in list
         return OK; //Return status
     }
     else{
@@ -64,7 +64,7 @@ exception create_task(void (* body)(), uint d){
                 return FAIL;
             }
             objl->pTask = objt;
-            insertDeadline(readylist, objl);//readylist and update order in list
+            insertDeadline(readyList, objl);//readylist and update order in list
             LoadContext();
         }   
         
