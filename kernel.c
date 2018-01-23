@@ -11,6 +11,7 @@ list * waitingList;
 list * readyList;
 list * timerList;
 TCB * running;
+
 // TASK ADMINISTRATION
 int init_kernel(void){
     set_ticks(0);
@@ -26,7 +27,10 @@ int init_kernel(void){
         if(timerList==NULL){
         return FAIL;
         }
-        //create_task(,NULL)
+        //create idle task
+        create_task(idleTask,uint_MAX)
+        S_MODE = TRUE;
+        return OK;
 
     /*
     Set tick counter to zero - DONE

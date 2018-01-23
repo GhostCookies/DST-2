@@ -1,4 +1,4 @@
-// dlist.c fånig changeeeee
+// dlist.c
 
 #include "dlist.h"
 
@@ -60,14 +60,15 @@ void insertDeadline(list * mylist, listobj * pObj)
 	if((pObj->pTask == NULL)||(pMarker->pTask == NULL)){
 		return;
 	}
-	if(pObj->pTask->DeadLine == NULL){
-		pObj->pPrevious = mylist->pTail;
-		pObj->pNext = pObj;
-		mylist->pTail->pNext = pObj;
-		mylist->pTail = pObj;
-		return;
-	}
+	//if(pObj->pTask->DeadLine == NULL){
+	//	pObj->pPrevious = mylist->pTail;
+	//	pObj->pNext = pObj;
+	//	mylist->pTail->pNext = pObj;
+	//	mylist->pTail = pObj;
+	//	return;
+	//}
 
+	//Insert catch when deadline is NULL?
 	while(pObj->pTask->DeadLine > pMarker->pTask->DeadLine){
 		pMarker = pMarker->pNext;
 	}
