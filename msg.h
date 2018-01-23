@@ -2,6 +2,6 @@
 #define _MSH_H_
 #include "kernel.h"
 
-msg* create_MSG();
-
+void deleteMessage();
+mailbox * addToMailbox(mailbox * mbox, msg * msg);
 #endif

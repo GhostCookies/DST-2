@@ -85,12 +85,12 @@ void run(void){
 }
 // COMMUNICATION
 
-mailbox* create_mailbox(uint nMessages, uint nDataSize){    //DONE????
+mailbox* create_mailbox(uint nMessages, uint nDataSize){
     mailbox* mailList = (mailbox *)calloc(1, sizeof(mailbox)); //Allocate memory for the Mailbox
     if (mailList == NULL) {
 		return 0;
 	}
-    msg* msgobj = create_MSG();  //Allocate memory for msg
+    msg* msgobj = (msg*) calloc(1,sizeof(msg)); //Allocate memory for the msg obj
     if(msgobj == NULL){
         return 0;
     }
@@ -104,10 +104,10 @@ mailbox* create_mailbox(uint nMessages, uint nDataSize){    //DONE????
         free(mailList->pHead);
         free(mailList);
     }
-    mailList->pHead->pPrevious = mailList->pHead;   //Initialize Mailbox structure
-    mailList->pHead->pNext = mailList->pTail;   //Initialize Mailbox structure
-    mailList->pTail->pPrevious = mailList->pHead;   //Initialize Mailbox structure
-    mailList->pTail->pNext = mailList->pTail;   //Initialize Mailbox structure
+    mailList->pHead->pPrevious = mailList->pHead;   
+    mailList->pHead->pNext = mailList->pTail;   
+    mailList->pTail->pPrevious = mailList->pHead;   
+    mailList->pTail->pNext = mailList->pTail;   
     mailList->nDataSize=nDataSize;  //Set The size of one Message in the Mailbox 
     mailList->nMessages=nMessages;  //Set the maximum number of Messages the Mailbox can hold.
     return mailList;
@@ -126,7 +126,24 @@ int no_messages(mailbox* mBox){
     
 }
 exception send_wait(mailbox* mBox, void* pData){
+    volatile bool firstTime = TRUE;
+    isr_off();  //Disable interrupt
     
+    SaveContext();
+    if(firstTime){
+        firstTime = FALSE;
+        if(mBox->pHead->pNext!=mBox->pTail){
+            mBox->pHead->pNext->pData=pData;
+            insertDeadline(readyList,mBox->pHead->pNext->pBlock);
+            deleteMessage(mBox->pHead->pNext);
+        }
+        else{
+            msg* msgobj = (msg*) calloc(1,sizeof(msg));
+            msgobj->pData=pData;
+            mailbox->
+        }
+        
+    }
 }
 
 exception receive_wait(mailbox* mBox, void* pData){
