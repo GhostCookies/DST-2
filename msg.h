@@ -1,7 +1,7 @@
-#ifndef _TCB_H_
-#define _TCB_H_
+#ifndef _MSG_H_
+#define _MSH_H_
 #include "kernel.h"
 
-mailbox* create_MSG();
+msg* create_MSG();
 
 #endif

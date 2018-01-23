@@ -3,7 +3,7 @@
 #include "kernel.h"
 #include "dlist.h"
 #include "tcb.h"
-#include "msg.h"
+#include "msg.c"
 #include "kernel_hwdep.h"
 uint TICK;
 bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
