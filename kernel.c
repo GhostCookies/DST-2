@@ -152,9 +152,41 @@ exception send_wait(mailbox* mBox, void* pData){
 }
 
 exception receive_wait(mailbox* mBox, void* pData){
-    
+    volatile bool firstTime = TRUE;
+    isr_off(); //Disable interrupt
+    SaveContext(); //Save context
+    if(firstTime){ //IF first execution THEN
+        firstTime = FALSE; //Set: not first execution any more
+        if(){
+            //Copy senders data to receiving tasks data area
+            //Remove sending tasks Message struct from the Mailbox
+            if(){//IF message was of wait type THEN
+            //Move sending task to readyList
+            }
+            else{
+                //Free senders data area
+            }
+        }
+        else{
+            //Allocate a Message structure
+            //Add Message to the Mailbox
+            //Move receiving task from readyList to waitingList
+        }
+        LoadContext();//Load context
+    }
+    else{
+        if(){//IF deadline is reached THEN
+            isr_off();//Disable interrupt
+            //Remove recieve Message
+            isr_on();//Enable interrupt
+            return DEADLINE_REACHED;
+        }
+        else{
+            return OK;
+        }
+    }
 }
-exception nd_no_wait(mailbox* mBox, void* pData){
+exception send_no_wait(mailbox* mBox, void* pData){
     
 }
 int receive_no_wait(mailbox* mBox, void* pData){
