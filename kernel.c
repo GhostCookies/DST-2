@@ -1,5 +1,6 @@
 #include <time.h>
 #include <stdio.h>
+#include <limits.h>
 #include "kernel.h"
 #include "dlist.h"
 #include "tcb.h"
@@ -165,7 +166,6 @@ exception wait(uint nTicks){
     volatile bool firstTime = TRUE;
     isr_off();  //Disable interrupt
     SaveContext();  //Save context
-    //TODO
     if(firstTime){ // IF first execution THEN
         firstTime = FALSE;  //Set: not first execution any more
         listobj * objl = extract(readylist->pHead->pNext);
