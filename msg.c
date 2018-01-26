@@ -8,7 +8,8 @@ void deleteMessage(msg *pObj)
         
 }
 mailbox * addToMailbox(mailbox * mbox, msg * msg){
+    msg->pPrevious=mbox->pTail->pPrevious
     mbox->pTail->pPrevious->pNext=msg;
     msg->pNext=mbox->pTail;
-    msg->pPrevious=mbox->pTail->pPrevious->pPrevious;
+    mbox->pTail->pPrevious=msg;
 }
