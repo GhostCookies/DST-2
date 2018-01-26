@@ -157,8 +157,9 @@ exception receive_wait(mailbox* mBox, void* pData){
     SaveContext(); //Save context
     if(firstTime){ //IF first execution THEN
         firstTime = FALSE; //Set: not first execution any more
-        if(){
-            //Copy senders data to receiving tasks data area
+        *msg mess = mBox->pHead->pNext;
+        if(mess =! mBox->pTail){//IF send Message is waiting THEN
+            *memcpy(mess->pData, pData, sizeof(pData));//Copy senders data to receiving tasks data area
             //Remove sending tasks Message struct from the Mailbox
             if(){//IF message was of wait type THEN
             //Move sending task to readyList
