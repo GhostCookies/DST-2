@@ -182,26 +182,31 @@ exception receive_wait(mailbox* mBox, void* pData){
         firstTime = FALSE; //Set: not first execution any more
         *msg mess = mBox->pHead->pNext;
         if(mess =! mBox->pTail){//IF send Message is waiting THEN
-            *memcpy(mess->pData, pData, sizeof(pData));//Copy senders data to receiving tasks data area
-            //Remove sending tasks Message struct from the Mailbox
-            if(){//IF message was of wait type THEN
-            //Move sending task to readyList
+            *memcpy(pData, mess->pData, sizeof(mess->pData));//Copy senders data to receiving tasks data area
+            mess->pNext->pPrevious = mess->pPrevious;//Remove sending tasks Message struct from the Mailbox
+            mess->pPrevious->pNext = mess->pNext;
+/*TODO*/            if(){//IF message was of wait type THEN
+            insertDeadline(readyList, mess->pBlock);//Move sending task to readyList
             }
             else{
-                //Free senders data area
+                free(mess->pData);//Free senders data area
             }
         }
         else{
-            //Allocate a Message structure
-            //Add Message to the Mailbox
-            //Move receiving task from readyList to waitingList
+            msg* msgobj = (msg*) calloc(1,sizeof(msg));//Allocate a Message structure
+            mBox->pHead->pNext = msgobj;//Add Message to the Mailbox
+            mBox->pTail->pPrevious = msgobj;
+            msgobj->pPrevious = mBox->pHead;
+            msgobj->pNext = mBox->pTail;
+            listobj* objec = extract(readylist->pHead->pNext);//Move receiving task from readyList to waitingList
+/*TODO*/            //insertWait instead of insertDeadline(waitList, objec);
         }
         LoadContext();//Load context
     }
     else{
-        if(){//IF deadline is reached THEN
+        if(TICK > (readylist->pHead-pNext->pBlock->DeadLine)){//IF deadline is reached THEN
             isr_off();//Disable interrupt
-            //Remove recieve Message
+            free(msgobj);//Remove recieve Message
             isr_on();//Enable interrupt
             return DEADLINE_REACHED;
         }
@@ -216,7 +221,7 @@ exception send_no_wait(mailbox* mBox, void* pData){
     SaveContext();
     if(firstTime){
         firstTime = FALSE;
-        if(){//IF receiving task is waiting THEN
+        if(mBox->pHead->pNext != mBox->pTail){//IF receiving task is waiting THEN
             //Copy data to receiving tasks data area
             //Remove receiving tasks Message struct from the Mailbox
             //Move receiving task to readyList
@@ -233,13 +238,13 @@ exception send_no_wait(mailbox* mBox, void* pData){
     }
     return OK;
 }
-int receive_no_wait(mailbox* mBox, void* pData){
+exception receive_no_wait(mailbox* mBox, void* pData){
     volatile bool firstTime = TRUE;
     isr_off();
     SaveContext();
     if(firstTime){
         firstTime = FALSE;
-        if(){//IF send Message is waiting THEN
+        if(mBox-pHead-pNext != mBox->pTail){//IF send Message is waiting THEN
             //Copy senders data to receiving tasks data area
             //Remove sending tasks Message struct from Mailbox
             if(){//IF Message was of wait type THEN
