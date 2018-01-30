@@ -157,7 +157,7 @@ exception receive_wait(mailbox* mBox, void* pData){
     SaveContext(); //Save context
     if(firstTime){ //IF first execution THEN
         firstTime = FALSE; //Set: not first execution any more
-        *msg mess = mBox->pHead->pNext;
+        msg* mess = mBox->pHead->pNext;
         if(mess =! mBox->pTail){//IF send Message is waiting THEN
             *memcpy(pData, mess->pData, sizeof(mess->pData));//Copy senders data to receiving tasks data area
             mess->pNext->pPrevious = mess->pPrevious;//Remove sending tasks Message struct from the Mailbox
@@ -183,7 +183,9 @@ exception receive_wait(mailbox* mBox, void* pData){
     else{
         if(TICK > (readylist->pHead-pNext->pBlock->DeadLine)){//IF deadline is reached THEN
             isr_off();//Disable interrupt
-            free(msgobj);//Remove recieve Message
+            mBox->pHead->pNext = mBox->pHead->pNext->pNext;
+            free(mBox->pHead->pNext->pPrevious);//Remove recieve Message
+            mBox->pHead->pNext->pPrevious = mBox->pHead;
             isr_on();//Enable interrupt
             return DEADLINE_REACHED;
         }
@@ -198,17 +200,21 @@ exception send_no_wait(mailbox* mBox, void* pData){
     SaveContext();
     if(firstTime){
         firstTime = FALSE;
-        if(mBox->pHead->pNext != mBox->pTail){//IF receiving task is waiting THEN
-            //Copy data to receiving tasks data area
-            //Remove receiving tasks Message struct from the Mailbox
-            //Move receiving task to readyList
+        msg* mess = mBox->pHead->pNext;
+        if(mess != mBox->pTail){//IF receiving task is waiting THEN
+            *memcpy(mess->pData,pData, sizeof(pData));//Copy data to receiving tasks data area
+            mess->pPrevious->pNext = mess->next;//Remove receiving tasks Message struct from the Mailbox
+            mess->pNext->pPrevious = mess->pPrevious;
+            insertDeadline(readylist,mess->pBlock);//Move receiving task to readyList
+/*TODO*/            //free(mess);
             LoadContext();
         }
         else{
-            //Allocate a Message structure
-            //Copy Data to the Message
-            if(){//Mailbox is full
-                //Remove the oldest Message struct
+            msg* msgobj = (msg*) calloc(1,sizeof(msg));//Allocate a Message structure
+            msgobj->pData = pData;//Copy Data to the Message
+            if(mBox->nMaxMessages == mBox->nMessages){//Mailbox is full
+                mBox->pHead->pNext = mBox->pHead->pNext->pNext;//Remove the oldest Message struct
+                mBox->pHead->pNext->pPrevious = mBox->pHead;
             }
             //Add Message to the Mailbox
         }
