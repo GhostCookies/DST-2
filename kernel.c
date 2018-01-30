@@ -1,6 +1,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <limits.h>
+#include <string.h>
 #include "kernel.h"
 #include "dlist.h"
 #include "tcb.h"
@@ -93,26 +94,28 @@ void run(void){
 mailbox* create_mailbox(uint nMessages, uint nDataSize){
     mailbox* mailList = (mailbox *)calloc(1, sizeof(mailbox)); //Allocate memory for the Mailbox
     if (mailList == NULL) {
-		return 0;
+		return FAIL;
 	}
+    mailList->pHead = (msg * )calloc(1,sizeof(msg));    //Allocate memory for the Mailbox
+    if(mailList->pHead == NULL){
+        return NULL;
+    }
+    mailList->pTail = (msg * )calloc(1,sizeof(msg));    //Allocate memory for the Mailbox
+    if(mailList->pTail==NULL){
+        return NULL;
+    }
     msg* msgobj = (msg*) calloc(1,sizeof(msg)); //Allocate memory for the msg obj
     if(msgobj == NULL){
-        return 0;
+        return FAIL;
     }
-    mailList->pHead = msgobj;  
-    if (mailList->pHead == NULL) {
-		free(mailList);
-		return NULL;
-    }
-    mailList->pTail = msgobj;  
-    if(mailList->pTail==NULL){
-        free(mailList->pHead);
-        free(mailList);
-    }
-    mailList->pHead->pPrevious = mailList->pHead;   
-    mailList->pHead->pNext = mailList->pTail;   
-    mailList->pTail->pPrevious = mailList->pHead;   
-    mailList->pTail->pNext = mailList->pTail;   
+    
+     
+    mailList->pHead->pPrevious = mailList->pHead;   //Initialize Mailbox structure
+    mailList->pHead->pNext = mailList->pTail;       //Initialize Mailbox structure
+    mailList->pTail->pPrevious = mailList->pHead;   //Initialize Mailbox structure
+    mailList->pTail->pNext = mailList->pTail;       //Initialize Mailbox structure
+    
+    mailList->pHead->pNext = msgobj; 
     mailList->nDataSize=nDataSize;  //Set The size of one Message in the Mailbox 
     mailList->nMessages=nMessages;  //Set the maximum number of Messages the Mailbox can hold.
     return mailList;
@@ -131,23 +134,43 @@ int no_messages(mailbox* mBox){
     
 }
 exception send_wait(mailbox* mBox, void* pData){
+    if(mBox==NULL){
+        return FAIL;
+    }
     volatile bool firstTime = TRUE;
     isr_off();  //Disable interrupt
     
     SaveContext();
     if(firstTime){
         firstTime = FALSE;
-        if(mBox->pHead->pNext!=mBox->pTail){
-            mBox->pHead->pNext->pData=pData;
-            insertDeadline(readyList,mBox->pHead->pNext->pBlock);
-            deleteMessage(mBox->pHead->pNext);
+        if(mBox->pHead->pNext!=mBox->pTail && abs(mBox->nMessages)!=mBox->nMaxMessages){
+            *memccpy(mBox->pHead->pNext->pData,pData,sizeof(pData)); //Copy senderís data to the data area of the receivers message
+            insertDeadline(readyList,mBox->pHead->pNext->pBlock);   //Move receiving task to Readylist
+            deleteMessage(mBox->pHead->pNext);  //Remove receiving taskís Message struct from the mailbox
         }
         else{
-            msg* msgobj = (msg*) calloc(1,sizeof(msg));
-            msgobj->pData=pData;
-            mailbox->
+            msg* msgobj = (msg*) calloc(1,sizeof(msg)); //Allocate a Message structure
+            if(msgobj==NULL){
+                return NULL;
+            }
+            msgobj->pData=pData;    //Set data pointer
+            addToMailbox(mBox,msgobj);  //add message to mailbox
+            l_obj* sendingTask = mBox->pHead->pNext->pBlock;
+            extract(sendingTask);
+            insertDeadline(waitingList,sendingTask);    //Rätt?
         }
-        
+        LoadContext();
+    }
+    
+    else{
+        if(running->DeadLine <= TICK){
+            isr_off();  //Disable interrupt
+            free(mBox->pHead->pNext->pBlock);  //Remove send Message
+            isr_on();
+            return DEADLINE_REACHED;
+        }
+        else
+            return OK;
     }
 }
 
