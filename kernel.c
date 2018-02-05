@@ -71,17 +71,18 @@ exception create_task(void (* body)(), uint d){
    return OK; 
 }
 void terminate(void){
-    listobj* tempRun = extract(readyList->pHead->pNext);
-    free(tempRun->pTask);
-    free(tempRun->pMessage);
-    free(tempRun);
-    running = readyList->pHead->pNext->pTask;
-    LoadContext();
+    if(readyList->pHead->pNext->pTask->DeadLine!=UINT_MAX){
+        listobj* tempRun = extract(readyList->pHead->pNext);
+        free(tempRun->pTask);
+        free(tempRun->pMessage);
+        free(tempRun);
+        running = readyList->pHead->pNext->pTask;
+        LoadContext();
+    }
 }
 
 void run(void){
-    //TODO 
-    //Initialize interrupt timer
+    timer0_start(); //Initialize interrupt timer
     S_MODE=FALSE;   //Set the kernel in running mode
     isr_on();  //Enable interrupts
     LoadContext();  //Load context
@@ -136,14 +137,14 @@ exception send_wait(mailbox* mBox, void* pData){
     }
     volatile bool firstTime = TRUE;
     isr_off();  //Disable interrupt
-    
     SaveContext();
     if(firstTime){
         firstTime = FALSE;
-        if(mBox->pHead->pNext!=mBox->pTail && abs(mBox->nMessages)!=mBox->nMaxMessages){
-            *memccpy(mBox->pHead->pNext->pData,pData,sizeof(pData)); //Copy senderís data to the data area of the receivers message
-            insertDeadline(readyList,mBox->pHead->pNext->pBlock);   //Move receiving task to Readylist
-            deleteMessage(mBox->pHead->pNext);  //Remove receiving taskís Message struct from the mailbox
+        msg* msg = mBox->pHead->pNext;
+        if(msg!=mBox->pTail && abs(mBox->nMessages)!=mBox->nMaxMessages){
+            *memccpy(msg->pData,pData,sizeof(pData)); //Copy senderís data to the data area of the receivers message
+            insertDeadline(readyList,msg->pBlock);   //Move receiving task to Readylist
+            deleteMessage(msg);  //Remove receiving taskís Message struct from the mailbox
         }
         else{
             msg* msgobj = (msg*) calloc(1,sizeof(msg)); //Allocate a Message structure
@@ -152,7 +153,8 @@ exception send_wait(mailbox* mBox, void* pData){
             }
             msgobj->pData=pData;    //Set data pointer
             addToMailbox(mBox,msgobj);  //add message to mailbox
-            l_obj* sendingTask = mBox->pHead->pNext->pBlock;
+            msgobj->pBlock
+            l_obj* sendingTask = msgobj->pBlock;
             extract(sendingTask);
 /*TODO*/            insertDeadline(waitingList,sendingTask);
         }
@@ -295,7 +297,16 @@ uint deadline(void){
     return running->DeadLine;
 }
 void set_deadline(uint nNew){
-    running->DeadLine = nNew;
+    volatile bool firstTime = TRUE;
+    isr_off();
+    SaveContext();
+    if(firstTime){
+        firstTime = FALSE;
+        running->DeadLine = nNew;
+        //TODO Reschedule Readylist
+        LoadContext();
+    }
+    
 }
 void idleTask(){
     while(TRUE){}
