@@ -53,25 +53,10 @@ void insert(list * mylist, listobj * pObj)
 	pObj->pNext->pPrevious = pObj;
 }
 
-void insertDeadline(list * mylist, listobj * pObj)
-{// insert first in list
+void insertDeadline(list * mylist, listobj * pObj){// insert first in list
 	listobj *pMarker;
 	pMarker = mylist->pHead->pNext;
-	// If the list is empty, unaure if needed
-	/*
-	if(pMarker == mylist->pTail){
-		mylist->pHead->pNext     = pObj;
-		mylist->pTail->pPrevious = pObj;
-		pObj->pPrevious = mylist->pHead;
-		pObj->pNext     = mylist->pTail;
-		return;
-	}
-	*/
-	// Catch if the TCB doesn't exist
-	//if((pObj->pTask == NULL)||(pMarker->pTask == NULL)){
-	//	return;
-	//}
-	//Insert catch when deadline is NULL?
+	//Insert catch for NULL?
 	while(pMarker != mylist->pTail){
 		 if(pObj->pTask->DeadLine >= pMarker->pTask->DeadLine){
 			pMarker = pMarker->pNext;
