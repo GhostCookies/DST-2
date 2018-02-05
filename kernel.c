@@ -79,7 +79,7 @@ exception create_task(void (* body)(), uint d){
 }
 void terminate(void){
     //TODO Remove running task from Readylist ta bort objekt om det är skillt ifrån högsta möjliga int värdet, (IDLE TASK)
-    if(readyList->pHead->pNext->pTask->DeadLine!=UINT_MAX){
+    if(readyList->pHead->pNext->pTask->DeadLine!=UINT_MAX){ /*checks if the runnint task is a idle task*/
         extract(readyList->pHead->pNext);
         running=readyList->pHead->pNext->pTask; //is this correct?
     }
@@ -157,6 +157,7 @@ exception send_wait(mailbox* mBox, void* pData){
             }
             msgobj->pData=pData;    //Set data pointer
             addToMailbox(mBox,msgobj);  //add message to mailbox
+            msgobj->pBlock
             l_obj* sendingTask = msgobj->pBlock;
             extract(sendingTask);
             insertDeadline(waitingList,sendingTask);    //Rätt?
