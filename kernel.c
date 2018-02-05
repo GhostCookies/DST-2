@@ -228,7 +228,7 @@ exception send_no_wait(mailbox* mBox, void* pData){
         msg* mess = mBox->pHead->pNext;
         if(mess != mBox->pTail){//IF receiving task is waiting THEN
             *memcpy(mess->pData,pData, sizeof(pData));//Copy data to receiving tasks data area
-            mess->pPrevious->pNext = mess->next;//Remove receiving tasks Message struct from the Mailbox
+            mess->pPrevious->pNext = mess->pNext;//Remove receiving tasks Message struct from the Mailbox
             mess->pNext->pPrevious = mess->pPrevious;
             insertDeadline(readylist,mess->pBlock);//Move receiving task to readyList
 /*TODO*/            //free(mess);
@@ -241,30 +241,35 @@ exception send_no_wait(mailbox* mBox, void* pData){
                 mBox->pHead->pNext = mBox->pHead->pNext->pNext;//Remove the oldest Message struct
                 mBox->pHead->pNext->pPrevious = mBox->pHead;
             }
-            //Add Message to the Mailbox
+            addToMailbox(mBox, msgobj);//Add Message to the Mailbox
         }
     }
     return OK;
 }
 exception receive_no_wait(mailbox* mBox, void* pData){
     volatile bool firstTime = TRUE;
+    volatile exception status = FAIL;
     isr_off();
-    SaveContext();
+    SaveContext();  
     if(firstTime){
         firstTime = FALSE;
-        if(mBox-pHead-pNext != mBox->pTail){//IF send Message is waiting THEN
-            //Copy senders data to receiving tasks data area
-            //Remove sending tasks Message struct from Mailbox
-            if(){//IF Message was of wait type THEN
-                //Move sending task to readyList
+        msg* mess = mBox->pHead->pNext;
+        if(mess != mBox->pTail){//IF send Message is waiting THEN
+            status = OK;
+            *memcpy(pData, mess->pData, sizeof(mess->pData));//Copy senders data to receiving tasks data area
+            mBox->pHead->pNext = mess->pNext;//Remove sending tasks Message struct from Mailbox
+            mess->pNext->pPrevious = mBox->pHead;
+            if(mess->pBlock != NULL){//IF Message was of wait type THEN 
+                insertDeadline(readylist, mess->pBlock); //Move sending task to readyList
             }
             else{
-                //Free senders data area
+                free(pData);//Free senders data area
+
             }
         }
         LoadContext();
     }
-    return 0;//Return status on received Message (not 0!)
+    return status;//Return status on received Message (not 0!)
 }
 
 //TIMING
