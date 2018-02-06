@@ -5,7 +5,7 @@
 #include "kernel.h"
 #include "dlist.h"
 #include "tcb.h"
-#include "msg.c"
+#include "msg.h"
 #include "kernel_hwdep.h"
 
 #define EXPIRED_DEADLINE 2 //If deadline is reached for a message
@@ -134,29 +134,30 @@ exception send_wait(mailbox* mBox, void* pData){
     SaveContext();
     if(firstTime){
         firstTime = FALSE;
-        msg* msg = mBox->pHead->pNext;
+        msg* nMsg = mBox->pHead->pNext;
 
-        while(msg->Status == EXPIRED_DEADLINE){
-            deleteMessage(mBox, msg, Math.Sign(mBox->nMessages);
-            msg = mBox->pHead->pNext;
+        while(nMsg->Status == EXPIRED_DEADLINE){
+            deleteMessage(mBox, nMsg, (mBox->nMessages > 0) - (mBox->nMessages < 0));
+            nMsg = mBox->pHead->pNext;
         }
 
         if(mBox->nMessages < 0){
-            *memcpy(msg->pData,pData,sizeof(pData)); //Copy sender's data to the data area of the receivers message
-            listobj* receivingTask = extract(msg->pBlock);
+            memcpy(nMsg->pData,pData,sizeof(pData)); //Copy sender's data to the data area of the receivers message
+            listobj* receivingTask = extract(nMsg->pBlock);
             insertDeadline(readyList, receivingTask);   //Move receiving task to Readylist
-            deleteMessage(mBox, msg, RECEIVER);  //Remove receiving task's Message struct from the mailbox
+            deleteMessage(mBox, nMsg, RECEIVER);  //Remove receiving task's Message struct from the mailbox
         }
         else{
-            msg* msgobj = (msg*) calloc(1,sizeof(msg)); //Allocate a Message structure
-            if(msgobj==NULL){
-                return NULL;
-            }
-            msgobj->pData=pData;    //Set data pointer
-            msgobj->pBlock = readyList->pHead->pNext; //add running task to message
-            msgobj->pBlock->pMessage = msgobj; //add message to running task
-            addToMailbox(mBox,msgobj, SENDER);  //add message to mailbox
-            l_obj* sendingTask = msgobj->pBlock;
+            msg* mObj;
+            mObj = (msg*) calloc(1,sizeof(msg)); //Allocate a Message structure
+            if(mObj==NULL){
+                return FAIL;
+            } 
+            mObj->pData=pData;    //Set data pointer
+            mObj->pBlock = readyList->pHead->pNext; //add running task to message
+            mObj->pBlock->pMessage = mObj; //add message to running task
+            addToMailbox(mBox,mObj, SENDER);  //add message to mailbox
+            listobj* sendingTask = mObj->pBlock;
             extract(sendingTask);
             insertDeadline(waitingList,sendingTask);
         }
@@ -184,12 +185,12 @@ exception receive_wait(mailbox* mBox, void* pData){
         msg* nMsg = mBox->pHead->pNext;
 
         while(nMsg->Status == EXPIRED_DEADLINE){
-            deleteMessage(mBox, nMsg, Math.Sign(mBox->nMessages));
+            deleteMessage(mBox, nMsg, (mBox->nMessages > 0) - (mBox->nMessages < 0));
             nMsg = mBox->pHead->pNext;
         }
 
         if(mBox->nMessages > 0){//IF send Message is waiting THEN
-            *memcpy(pData, nMsg->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
+            memcpy(pData, nMsg->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
             deleteMessage(mBox, nMsg, SENDER); //Remove sending tasks message struct from mailbox
             if(nMsg->pBlock != NULL){//IF message was of wait type THEN
                 listobj* sendingTask = extract(nMsg->pBlock);
@@ -201,7 +202,7 @@ exception receive_wait(mailbox* mBox, void* pData){
         }
         else{
             msg* msgobj = (msg*) calloc(1,sizeof(msg));//Allocate a Message structure
-            msgobj->pBlock = readylist->pHead->pNext; //add running task to message
+            msgobj->pBlock = readyList->pHead->pNext; //add running task to message
             msgobj->pBlock->pMessage = msgobj; //add message to running task
             addToMailbox(mBox,msgobj, RECEIVER);//Add Message to the Mailbox
             listobj* objec = extract(msgobj->pBlock);//Move receiving task from readyList to waitingList
@@ -230,15 +231,15 @@ exception send_no_wait(mailbox* mBox, void* pData){
         msg* nMsg = mBox->pHead->pNext;
 
         while(nMsg->Status == EXPIRED_DEADLINE){
-            deleteMessage(mBox, nMsg, Math.Sign(mBox->nMessages));
+            deleteMessage(mBox, nMsg, (mBox->nMessages > 0) - (mBox->nMessages < 0));
             nMsg = mBox->pHead->pNext;
         }
 
         if(mBox->nMessages < 0){//IF receiving task is waiting THEN
-            *memcpy(nMsg->pData,pData, sizeof(pData));//Copy data to receiving tasks data area
+            memcpy(nMsg->pData,pData, sizeof(pData));//Copy data to receiving tasks data area
             listobj* receivingTask = extract(nMsg->pBlock);
             deleteMessage(mBox, nMsg, RECEIVER);//Remove receiving tasks Message struct from the Mailbox
-            insertDeadline(readylist,receivingTask);//Move receiving task to readyList
+            insertDeadline(readyList,receivingTask);//Move receiving task to readyList
             LoadContext();
         }
         else{
@@ -247,7 +248,7 @@ exception send_no_wait(mailbox* mBox, void* pData){
                 return FAIL;    
             }
             msgobj->pData = pData;//Copy Data to the Message
-            addToMailbox(mBox, msgobj);//Add Message to the Mailbox
+            addToMailbox(mBox, msgobj, SENDER);//Add Message to the Mailbox
         }
     }
     return OK;
@@ -261,15 +262,15 @@ exception receive_no_wait(mailbox* mBox, void* pData){
         msg* nMsg = mBox->pHead->pNext;
 
         while(nMsg->Status == EXPIRED_DEADLINE){
-            deleteMessage(mBox, nMsg, Math.Sign(mBox->nMessages));
+            deleteMessage(mBox, nMsg, (mBox->nMessages > 0) - (mBox->nMessages < 0));
             nMsg = mBox->pHead->pNext;
         }
-        
+
         if(mBox->nMessages > 0){//IF send Message is waiting THEN
-            *memcpy(pData, nMsg->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
+            memcpy(pData, nMsg->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
             if(nMsg->pBlock != NULL){//IF Message was of wait type THEN 
                 listobj* sendingTask = extract(nMsg->pBlock);
-                insertDeadline(readylist, sendingTask); //Move sending task to readyList
+                insertDeadline(readyList, sendingTask); //Move sending task to readyList
             }
         deleteMessage(mBox, nMsg, SENDER); // free senders data area
         }
