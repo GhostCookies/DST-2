@@ -74,7 +74,6 @@ void insertDeadline(list * mylist, listobj * pObj){// insert first in list
 
 void insertTimer(list* mylist,listobj* prObj){
     listobj* pMarker = mylist->pHead;
-    printf(" Head  %u ", mylist->pHead->nTCnt);;
     if(mylist->pHead==mylist->pTail){
         mylist->pHead->nTCnt=prObj->nTCnt;
         return;
@@ -106,26 +105,3 @@ listobj * extract(listobj *pObj)
 	return (pObj);
 }
 
-int main(void){
-		// My own test
-	list * testList1 = create_list();
-	list * testList2 = create_list();
-	listobj * testObj1 = create_listobj(10);
-	listobj * testObj3 = create_listobj(11);
-	listobj * testObj2 = create_listobj(9);
- 	TCB * mytask = (TCB *)calloc(1, sizeof(TCB));
-	mytask->DeadLine = 1;
-	testObj1->pTask = mytask;
-	testObj2->pTask = mytask;
-	testObj3->pTask = mytask;
-	//testObj1->pTask.DeadLine = 100;
-	insertDeadline(testList1,testObj1);
-	printf("%d \n", 1);
-	insertDeadline(testList1,testObj2);
-	printf("%d \n", 2);
-	insertDeadline(testList1,testObj3);
-	printf("%d \n", 3);
-	//insertWait(testList2,testObj2);
-	uint x = testList1->pTail->pTask->DeadLine;
-	return 0;
-}

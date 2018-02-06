@@ -15,7 +15,11 @@ bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
 list * waitingList;
 list * readyList;
 list * timerList;
-TCB * running;
+TCB * Running;
+
+void idleTask(){
+    while(TRUE){}
+}
 
 // TASK ADMINISTRATION
 int init_kernel(void){
@@ -79,14 +83,14 @@ void terminate(void){
         free(tempRun->pTask);
         free(tempRun->pMessage);
         free(tempRun);
-        running = readyList->pHead->pNext->pTask;
+        Running = readyList->pHead->pNext->pTask;
         LoadContext();
     }
 }
 
 void run(void){
     timer0_start(); //Initialize interrupt timer
-    S_MODE=FALSE;   //Set the kernel in running mode
+    S_MODE=FALSE;   //Set the kernel in Running mode
     isr_on();  //Enable interrupts
     LoadContext();  //Load context
 }
@@ -154,8 +158,8 @@ exception send_wait(mailbox* mBox, void* pData){
                 return FAIL;
             } 
             mObj->pData=pData;    //Set data pointer
-            mObj->pBlock = readyList->pHead->pNext; //add running task to message
-            mObj->pBlock->pMessage = mObj; //add message to running task
+            mObj->pBlock = readyList->pHead->pNext; //add Running task to message
+            mObj->pBlock->pMessage = mObj; //add message to Running task
             addToMailbox(mBox,mObj, SENDER);  //add message to mailbox
             listobj* sendingTask = mObj->pBlock;
             extract(sendingTask);
@@ -174,6 +178,7 @@ exception send_wait(mailbox* mBox, void* pData){
         }
     return OK;
     }
+return FAIL;
 }
 
 exception receive_wait(mailbox* mBox, void* pData){
@@ -202,8 +207,8 @@ exception receive_wait(mailbox* mBox, void* pData){
         }
         else{
             msg* msgobj = (msg*) calloc(1,sizeof(msg));//Allocate a Message structure
-            msgobj->pBlock = readyList->pHead->pNext; //add running task to message
-            msgobj->pBlock->pMessage = msgobj; //add message to running task
+            msgobj->pBlock = readyList->pHead->pNext; //add Running task to message
+            msgobj->pBlock->pMessage = msgobj; //add message to Running task
             addToMailbox(mBox,msgobj, RECEIVER);//Add Message to the Mailbox
             listobj* objec = extract(msgobj->pBlock);//Move receiving task from readyList to waitingList
             insertDeadline(waitingList, objec);
@@ -221,6 +226,7 @@ exception receive_wait(mailbox* mBox, void* pData){
         }
     return OK;
     }
+return FAIL;
 }
 exception send_no_wait(mailbox* mBox, void* pData){
     volatile bool firstTime = TRUE;
@@ -291,10 +297,10 @@ exception wait(uint nTicks){
         firstTime = FALSE;  //Set: not first execution any more
         listobj * objl = extract(readyList->pHead->pNext);
         objl->nTCnt = TICK + nTicks;
-        insertTimer(timerList, objl);//Place running task in the Timerlist
+        insertTimer(timerList, objl);//Place Running task in the Timerlist
         LoadContext(); //Load context
     }
-    if(TICK >= running->DeadLine){
+    if(TICK >= Running->DeadLine){
         return DEADLINE_REACHED;
     }
     return OK; 
@@ -307,7 +313,7 @@ uint ticks(void){
     return TICK;
 }
 uint deadline(void){
-    return running->DeadLine;
+    return Running->DeadLine;
 }
 void set_deadline(uint nNew){
     volatile bool firstTime = TRUE;
@@ -315,7 +321,7 @@ void set_deadline(uint nNew){
     SaveContext();
     if(firstTime){
         firstTime = FALSE;
-        running->DeadLine = (nNew + TICK);
+        Running->DeadLine = (nNew + TICK);
         //TODO Reschedule Readylist
         listobj* runningTask = extract(readyList->pHead->pNext);
         insertDeadline(readyList, runningTask);
@@ -334,12 +340,6 @@ void TimerInt(void){
         toReadyList->pMessage->Status = EXPIRED_DEADLINE; // 2 = timer exprired
         insertDeadline(readyList,toReadyList);
     }
-
-
-}
-
-void idleTask(){
-    while(TRUE){}
 }
 
 //INTERRUPT
@@ -348,11 +348,5 @@ extern void isr_off(void){
 }
 
 extern void isr_on(void){
-    set_isr(ISR_OFF);    //Turns on intterrupts
-}
-extern void SaveContext(void){
-    
-}
-extern void LoadContext(void){
-    
+    set_isr(ISR_ON);    //Turns on intterrupts
 }
