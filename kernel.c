@@ -11,13 +11,14 @@
 #define EXPIRED_DEADLINE 2 //If deadline is reached for a message
 
 uint TICK;
-bool S_MODE=FALSE; //IF FALSE not in start-up mode IF TRUE in start-up mode
+bool S_MODE=TRUE; //IF FALSE not in start-up mode IF TRUE in start-up mode
 list * waitingList;
 list * readyList;
 list * timerList;
 TCB * Running;
 
 void idleTask();
+void insertReady();
 
 // TASK ADMINISTRATION
 int init_kernel(void){
@@ -36,7 +37,7 @@ int init_kernel(void){
         }
         //create idle task
         create_task(idleTask,UINT_MAX);
-        S_MODE = TRUE;
+        S_MODE = FALSE;
         return OK;
 }
 
@@ -325,7 +326,7 @@ void set_deadline(uint nNew){
         listobj* runningTask = extract(readyList->pHead->pNext);
         insertReady(runningTask);
         LoadContext();
-    } 
+    }
 }
 
 void TimerInt(void){

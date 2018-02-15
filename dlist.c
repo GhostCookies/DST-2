@@ -73,27 +73,26 @@ void insertDeadline(list * mylist, listobj * pObj){// insert first in list
 }
 
 void insertTimer(list* mylist,listobj* prObj){
-    listobj* pMarker = mylist->pHead;
-    if(mylist->pHead==mylist->pTail){
-        mylist->pHead->nTCnt=prObj->nTCnt;
+    listobj* pMarker = mylist->pHead->pNext;
+    if(pMarker==mylist->pTail){     //If list is empty insert to first node
+        prObj->pNext = pMarker;
+	prObj->pPrevious = pMarker->pPrevious;
+	pMarker->pPrevious = prObj;
+	prObj->pPrevious->pNext = prObj;
         return;
     }
-    else if((pMarker->nTCnt) >= (prObj->nTCnt)){
-            prObj->pNext = pMarker->pNext;
-            prObj->pPrevious = pMarker;
-            pMarker->pNext = prObj;
-            prObj->pNext->pPrevious = prObj;
-    }
     else{
-        while(pMarker->pNext != mylist->pTail && pMarker->pNext->nTCnt < prObj->nTCnt){
-            pMarker=pMarker->pNext;
+        while(pMarker!=mylist->pTail){
+            if(prObj->nTCnt >= pMarker->nTCnt){ //Checks if the prObj has a smaller ntCnt then the next position in the timerlist
+                pMarker=pMarker->pNext;
+            }
+            else
+                break;
         }
-        prObj->pNext=pMarker->pNext;
-        if(pMarker->pNext!=mylist->pTail){
-            prObj->pNext->pPrevious=prObj;
-        }
-        pMarker->pNext=prObj;
-        prObj->pPrevious=pMarker;   
+        prObj->pNext = pMarker;
+	prObj->pPrevious = pMarker->pPrevious;
+	pMarker->pPrevious = prObj;
+	prObj->pPrevious->pNext = prObj;
     }
 }
 
