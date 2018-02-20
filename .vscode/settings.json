@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "dlist.h": "c",
+        "kernel.h": "c"
+    }
+}
