@@ -6,7 +6,6 @@
 #include "dlist.h"
 #include "tcb.h"
 #include "msg.h"
-#include "kernel_hwdep.h"
 
 #define EXPIRED_DEADLINE 2 //If deadline is reached for a message
 
@@ -19,6 +18,7 @@ TCB * Running;
 
 void idleTask();
 void insertReady();
+void runNext();
 
 // TASK ADMINISTRATION
 int init_kernel(void){
@@ -37,7 +37,6 @@ int init_kernel(void){
         }
         //create idle task
         create_task(idleTask,UINT_MAX);
-        S_MODE = FALSE;
         return OK;
 }
 
@@ -47,6 +46,7 @@ exception create_task(void (* body)(), uint d){
     if(objt == NULL){
         return FAIL;
     }
+    objt->DeadLine=d+ticks();
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
     if(S_MODE){
@@ -66,12 +66,13 @@ exception create_task(void (* body)(), uint d){
         SaveContext();
         if(firstTime){
             firstTime = FALSE;
-/*TODO*/            listobj * objl = create_listobj(10);
+            listobj * objl = create_listobj(10);
             if(objl == NULL){
                 return FAIL;
             }
             objl->pTask = objt;
             insertReady(objl);//readylist and update order in list
+            isr_on();
             LoadContext();
         }   
         
@@ -93,6 +94,7 @@ void run(void){
     timer0_start(); //Initialize interrupt timer
     S_MODE=FALSE;   //Set the kernel in Running mode
     isr_on();  //Enable interrupts
+    runNext();
     LoadContext();  //Load context
 }
 // COMMUNICATION
@@ -133,7 +135,7 @@ exception remove_mailbox(mailbox* mBox){
         return NOT_EMPTY;
 }
 
-exception send_wait(mailbox* mBox, void* pData){
+exception send_wait(mailbox* mBox, void* Data){
     volatile bool firstTime = TRUE;
     isr_off();  //Disable interrupt
     SaveContext();
@@ -147,25 +149,26 @@ exception send_wait(mailbox* mBox, void* pData){
         }
 
         if(mBox->nMessages < 0){
-            memcpy(nMsg->pData,pData,sizeof(pData)); //Copy sender's data to the data area of the receivers message
+            memcpy(nMsg->pData,Data,mBox->nDataSize); //Copy sender's data to the data area of the receivers message
             listobj* receivingTask = extract(nMsg->pBlock);
             insertReady(receivingTask);   //Move receiving task to Readylist
             deleteMessage(mBox, nMsg, RECEIVER);  //Remove receiving task's Message struct from the mailbox
         }
         else{
-            msg* mObj;
-            mObj = (msg*) calloc(1,sizeof(msg)); //Allocate a Message structure
+            msg* mObj = (msg*) calloc(1, sizeof(msg)); //Allocate a Message structure
             if(mObj==NULL){
                 return FAIL;
             } 
-            mObj->pData=pData;    //Set data pointer
+            mObj->pData=Data;    //Set data pointer
             mObj->pBlock = readyList->pHead->pNext; //add Running task to message
             mObj->pBlock->pMessage = mObj; //add message to Running task
             addToMailbox(mBox,mObj, SENDER);  //add message to mailbox
             listobj* sendingTask = mObj->pBlock;
-            extract(sendingTask);
+            extract(sendingTask); //limmar ihop runt om task1
             insertDeadline(waitingList,sendingTask);
+            
         }
+        runNext();
         LoadContext();
     }
     else{
@@ -182,7 +185,7 @@ exception send_wait(mailbox* mBox, void* pData){
 return FAIL;
 }
 
-exception receive_wait(mailbox* mBox, void* pData){
+exception receive_wait(mailbox* mBox, void* Data){
     volatile bool firstTime = TRUE;
     isr_off(); //Disable interrupt
     SaveContext(); //Save context
@@ -196,23 +199,25 @@ exception receive_wait(mailbox* mBox, void* pData){
         }
 
         if(mBox->nMessages > 0){//IF send Message is waiting THEN
-            memcpy(pData, nMsg->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
-            deleteMessage(mBox, nMsg, SENDER); //Remove sending tasks message struct from mailbox
-            if(nMsg->pBlock != NULL){//IF message was of wait type THEN
-                listobj* sendingTask = extract(nMsg->pBlock);
+            memcpy(Data, mBox->pHead->pNext->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
+            deleteMessage(mBox, mBox->pHead->pNext, SENDER); //Remove sending tasks message struct from mailbox
+            if(mBox->pHead->pNext->pBlock != NULL){//IF message was of wait type THEN
+                listobj* sendingTask = extract(mBox->pHead->pNext->pBlock);
                 insertReady(sendingTask);//Move sending task to readyList
             }
             else{
-                free(nMsg->pData);//Free senders data area
+                free(nMsg);
             }
         }
         else{
             msg* msgobj = (msg*) calloc(1,sizeof(msg));//Allocate a Message structure
+            msgobj->pData=Data;
             msgobj->pBlock = readyList->pHead->pNext; //add Running task to message
             msgobj->pBlock->pMessage = msgobj; //add message to Running task
             addToMailbox(mBox,msgobj, RECEIVER);//Add Message to the Mailbox
             listobj* objec = extract(msgobj->pBlock);//Move receiving task from readyList to waitingList
             insertDeadline(waitingList, objec);
+            runNext();
         }
         LoadContext();//Load context
     }
@@ -229,7 +234,7 @@ exception receive_wait(mailbox* mBox, void* pData){
     }
 return FAIL;
 }
-exception send_no_wait(mailbox* mBox, void* pData){
+exception send_no_wait(mailbox* mBox, void* Data){
     volatile bool firstTime = TRUE;
     isr_off();
     SaveContext();
@@ -243,7 +248,7 @@ exception send_no_wait(mailbox* mBox, void* pData){
         }
 
         if(mBox->nMessages < 0){//IF receiving task is waiting THEN
-            memcpy(nMsg->pData,pData, sizeof(pData));//Copy data to receiving tasks data area
+            memcpy(nMsg->pData,Data, sizeof(Data));//Copy data to receiving tasks data area
             listobj* receivingTask = extract(nMsg->pBlock);
             deleteMessage(mBox, nMsg, RECEIVER);//Remove receiving tasks Message struct from the Mailbox
             insertReady(receivingTask);//Move receiving task to readyList
@@ -254,13 +259,13 @@ exception send_no_wait(mailbox* mBox, void* pData){
             if(msgobj == NULL){
                 return FAIL;    
             }
-            msgobj->pData = pData;//Copy Data to the Message
+            msgobj->pData = Data;//Copy Data to the Message
             addToMailbox(mBox, msgobj, SENDER);//Add Message to the Mailbox
         }
     }
     return OK;
 }
-exception receive_no_wait(mailbox* mBox, void* pData){
+exception receive_no_wait(mailbox* mBox, void* Data){
     volatile bool firstTime = TRUE;
     isr_off();
     SaveContext();  
@@ -274,7 +279,7 @@ exception receive_no_wait(mailbox* mBox, void* pData){
         }
 
         if(mBox->nMessages > 0){//IF send Message is waiting THEN
-            memcpy(pData, nMsg->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
+            memcpy(Data, nMsg->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
             if(nMsg->pBlock != NULL){//IF Message was of wait type THEN 
                 listobj* sendingTask = extract(nMsg->pBlock);
                 insertReady(sendingTask); //Move sending task to readyList
@@ -289,7 +294,7 @@ exception receive_no_wait(mailbox* mBox, void* pData){
     return OK;//Return status on received Message
 }
 
-//TIMING
+//TIMING        fixas
 exception wait(uint nTicks){
     volatile bool firstTime = TRUE;
     isr_off();  //Disable interrupt
@@ -299,8 +304,10 @@ exception wait(uint nTicks){
         listobj * objl = extract(readyList->pHead->pNext);
         objl->nTCnt = TICK + nTicks;
         insertTimer(timerList, objl);//Place Running task in the Timerlist
+        runNext();
         LoadContext(); //Load context
     }
+    isr_on();//Enable interrupt
     if(TICK >= Running->DeadLine){
         return DEADLINE_REACHED;
     }
@@ -342,9 +349,13 @@ void TimerInt(void){
     }
 }
 
+void runNext(){
+    Running = readyList->pHead->pNext->pTask;
+}
+
 void insertReady(listobj * pObj){
     insertDeadline(readyList, pObj);
-    Running = readyList->pHead->pNext->pTask;
+    runNext();
 }
 
 void idleTask(){
@@ -353,6 +364,9 @@ void idleTask(){
         TimerInt();
         LoadContext();
     }
+}
+int no_messages(mailbox* mbx){
+  return(abs(mbx->nMessages));
 }
 
 //INTERRUPT
