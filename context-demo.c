@@ -10,6 +10,8 @@ void task11(void);
 void task22(void);
 void task33(void);
 void task34(void);
+void task3(void);
+void task4(void);
 void isr_off(void){
 
 }
@@ -24,8 +26,8 @@ int nTest1=0, nTest2=0, nTest3=0;
 int main(void)
 {
   
-  int test = 2;
-  if(test==3){
+  int test = 3;
+  if(test==0){
     init_kernel();
     mb = create_mailbox(1000, sizeof(int));
     create_task(task33,300);
@@ -56,6 +58,14 @@ int main(void)
         while(1);
      }
      run(); /* First in readylist is task1 */
+    }
+    if(test==3){
+        init_kernel();
+        mBox = create_mailbox(3, sizeof(int));
+        create_task(task3, 100);
+        create_task(task4, 150);
+        run();
+        printf("Passed2");
     }
    run();
 }
@@ -140,4 +150,16 @@ void task34(void){
   int nData_t4=2;
   receive_wait(mb,&nData_t4);
   terminate();
+}
+void task3(void){
+    int a = 420;
+    printf("tjenis");
+    send_no_wait(mBox, &a);
+    terminate();
+}
+void task4(void){
+    int a = 420;
+    receive_no_wait(mBox, &a);
+    printf("tjenisPenis");
+    terminate();
 }

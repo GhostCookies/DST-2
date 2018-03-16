@@ -46,7 +46,12 @@ exception create_task(void (* body)(), uint d){
     if(objt == NULL){
         return FAIL;
     }
-    objt->DeadLine=d+ticks();
+    if(d==UINT_MAX){
+        objt->DeadLine=d; 
+    }
+    else{
+        objt->DeadLine=d+ticks();
+    }
     objt->PC = body;  //Set the TCB's PC to point to the task body
     objt->SP= &(objt->StackSeg[STACK_SIZE-1]); //Set TCBís SP to point to the stack segment
     if(S_MODE){
@@ -200,14 +205,15 @@ exception receive_wait(mailbox* mBox, void* Data){
 
         if(mBox->nMessages > 0){//IF send Message is waiting THEN
             memcpy(Data, mBox->pHead->pNext->pData, sizeof(nMsg->pData));//Copy senders data to receiving tasks data area
-            deleteMessage(mBox, mBox->pHead->pNext, SENDER); //Remove sending tasks message struct from mailbox
-            if(mBox->pHead->pNext->pBlock != NULL){//IF message was of wait type THEN
-                listobj* sendingTask = extract(mBox->pHead->pNext->pBlock);
+            //(Was here moved down 6 rows )deleteMessage(mBox, mBox->pHead->pNext, SENDER); //Remove sending tasks message struct from mailbox
+            if(nMsg->pBlock != NULL){//IF message was of wait type THEN, was mBox->pHead->pNext->pBlock
+                listobj* sendingTask = extract(nMsg->pBlock); //was mBox->pHead->pNext->pBlock
                 insertReady(sendingTask);//Move sending task to readyList
             }
             else{
                 free(nMsg);
             }
+            deleteMessage(mBox, mBox->pHead->pNext, SENDER); //Remove sending tasks message struct from mailbox
         }
         else{
             msg* msgobj = (msg*) calloc(1,sizeof(msg));//Allocate a Message structure
@@ -249,9 +255,11 @@ exception send_no_wait(mailbox* mBox, void* Data){
 
         if(mBox->nMessages < 0){//IF receiving task is waiting THEN
             memcpy(nMsg->pData,Data, sizeof(Data));//Copy data to receiving tasks data area
+            
             listobj* receivingTask = extract(nMsg->pBlock);
             deleteMessage(mBox, nMsg, RECEIVER);//Remove receiving tasks Message struct from the Mailbox
             insertReady(receivingTask);//Move receiving task to readyList
+            runNext();
             LoadContext();
         }
         else{
